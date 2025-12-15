@@ -1,33 +1,31 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const admin = JSON.parse(localStorage.getItem('admin') || '{}');
-  const isLoggedIn = user.id || admin.id;
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('admin');
-    localStorage.removeItem('token');
-    localStorage.removeItem('adminToken');
-    navigate('/login');
+    logout();
+    navigate('/');
   };
 
   const userNavItems = [
+    { id: 'welcome', label: 'Dashboard', icon: '🏠' },
     { id: 'assignments', label: 'My Assignments', icon: '📚' },
     { id: 'my-submissions', label: 'My Grades', icon: '📊' },
     { id: 'send-request', label: 'Send Request', icon: '📝' },
   ];
 
   const adminNavItems = [
+    { id: 'welcome', label: 'Dashboard', icon: '🏠' },
     { id: 'create-assignment', label: 'Create Assignment', icon: '➕' },
     { id: 'user-requests', label: 'User Requests', icon: '👥' },
     { id: 'grade-submissions', label: 'Grade Submissions', icon: '✅' },
     { id: 'assignment-results', label: 'All Results', icon: '📊' },
   ];
 
-  const navItems = admin.id ? adminNavItems : userNavItems;
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   const styles = {
     navbar: {
@@ -129,7 +127,7 @@ const Navbar = ({ activeTab, setActiveTab }) => {
             🎓 LMS Dashboard
           </h1>
           
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div style={styles.navButtons}>
               {navItems.map(item => (
                 <button
@@ -159,10 +157,10 @@ const Navbar = ({ activeTab, setActiveTab }) => {
         </div>
 
         <div style={styles.rightSection}>
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <>
               <span style={styles.welcomeText}>
-                Welcome, {user.firstName || admin.firstName}! 👋
+                Welcome, {user?.firstName}! 👋
               </span>
               <button
                 onClick={handleLogout}

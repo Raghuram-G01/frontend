@@ -19,7 +19,7 @@ const CreateAssignmentPage = () => {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+  const admin = JSON.parse(localStorage.getItem('user') || '{}');
   const adminId = admin.id;
   const today = new Date().toISOString().split("T")[0];
 
@@ -47,13 +47,19 @@ const CreateAssignmentPage = () => {
     setLoading(true);
 
     try {
-      const response = await adminAPI.createAssignment({
-        assignmentName: formData.assignmentName,
-        deadline: formData.deadline,
-        adminId,
+      const response = await fetch('http://localhost:21000/api/v1/Admin/createAssignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignmentName: formData.assignmentName,
+          deadline: formData.deadline,
+          adminId,
+        })
       });
+      
+      const data = await response.json();
 
-      if (response.data.success) {
+      if (data.success) {
         setShowSuccess(true);
         setFormData({ assignmentName: "", deadline: "" });
         setErrors({});
@@ -79,7 +85,7 @@ const CreateAssignmentPage = () => {
           notif.remove();
         }, 3000);
       } else {
-        alert(response.data.message || "Failed to create assignment");
+        alert(data.message || "Failed to create assignment");
       }
     } catch (error) {
       console.error("Error:", error);

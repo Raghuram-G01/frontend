@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_ENDPOINTS } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 
@@ -10,11 +8,11 @@ const LoginPage = () => {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
-    mobileNumber: "",
     password: "",
-    loginType: "email", // "email" or "mobile"
     userType: "user", // "user" or "admin"
   });
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestData, setRequestData] = useState({ email: '', message: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -22,18 +20,10 @@ const LoginPage = () => {
   const validate = () => {
     const newErrors = {};
 
-    if (formData.loginType === "email") {
-      if (!formData.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Invalid email format";
-      }
-    } else {
-      if (!formData.mobileNumber.trim()) {
-        newErrors.mobileNumber = "Mobile number is required";
-      } else if (!/^\d{10}$/.test(formData.mobileNumber)) {
-        newErrors.mobileNumber = "Mobile number must be 10 digits";
-      }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
     }
 
     if (!formData.password) {
@@ -59,24 +49,19 @@ const LoginPage = () => {
     setErrors({});
 
     try {
-      const endpoint =
-        formData.userType === "admin"
-          ? API_ENDPOINTS.USER.ADMIN_LOGIN
-          : API_ENDPOINTS.USER.LOGIN;
+      const endpoint = formData.userType === "admin" ? "/User/adminLogin" : "/User/userLogin";
 
       const payload = {
+        email: formData.email,
         password: formData.password,
       };
 
-      if (formData.loginType === "email") {
-        payload.email = formData.email;
-      } else {
-        payload.mobileNumber = formData.mobileNumber;
-      }
-
-      const { data } = await axios.post(endpoint, payload, {
+      const response = await fetch(`http://localhost:21000/api/v1${endpoint}`, {
+        method: 'POST',
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
+      const data = await response.json();
 
       if (data.success) {
         // Store user data in auth context
@@ -84,19 +69,21 @@ const LoginPage = () => {
 
         // Redirect based on user type
         if (data.data.role === "admin") {
-          navigate("/user-request");
+          navigate("/dashboard");
         } else {
-          navigate("/user-assignment-backend");
+          navigate("/dashboard");
         }
       } else {
         setErrors({ submit: data.message || "Login failed" });
       }
     } catch (error) {
+      const errorMsg = error.message || "Login failed. Please check your credentials.";
+      if (errorMsg.includes("not activated")) {
+        setShowRequestForm(true);
+        setRequestData({ email: formData.email, message: '' });
+      }
       setErrors({
-        submit:
-          error.response?.data?.message ||
-          error.message ||
-          "Login failed. Please check your credentials.",
+        submit: errorMsg,
       });
     } finally {
       setLoading(false);
@@ -256,6 +243,56 @@ const LoginPage = () => {
       fontWeight: "600",
       textDecoration: "none",
     },
+    requestModal: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+    },
+    requestCard: {
+      background: "white",
+      borderRadius: "12px",
+      padding: "2rem",
+      maxWidth: "400px",
+      width: "90%",
+    },
+    requestTextarea: {
+      width: "100%",
+      height: "100px",
+      padding: "0.75rem",
+      border: "2px solid #e2e8f0",
+      borderRadius: "8px",
+      marginBottom: "1rem",
+      resize: "vertical",
+    },
+    requestButtons: {
+      display: "flex",
+      gap: "0.5rem",
+    },
+    sendButton: {
+      flex: 1,
+      padding: "0.75rem",
+      background: "#667eea",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+    },
+    cancelButton: {
+      flex: 1,
+      padding: "0.75rem",
+      background: "#f7fafc",
+      color: "#718096",
+      border: "1px solid #e2e8f0",
+      borderRadius: "8px",
+      cursor: "pointer",
+    },
   };
 
   return (
@@ -295,79 +332,29 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Login Type Toggle */}
-          <div style={styles.toggleGroup}>
-            <button
-              type="button"
-              onClick={() => {
-                handleChange("loginType", "email");
-                handleChange("mobileNumber", "");
-              }}
-              style={styles.toggleButton(formData.loginType === "email")}
-            >
+          {/* Email Input */}
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>
+              <Mail size={16} />
               Email
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                handleChange("loginType", "mobile");
-                handleChange("email", "");
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              style={{
+                ...styles.input,
+                ...(errors.email ? styles.inputError : {}),
               }}
-              style={styles.toggleButton(formData.loginType === "mobile")}
-            >
-              Mobile
-            </button>
+              placeholder="Enter your email"
+            />
+            {errors.email && (
+              <div style={styles.errorText}>
+                <AlertCircle size={14} />
+                {errors.email}
+              </div>
+            )}
           </div>
-
-          {/* Email or Mobile Input */}
-          {formData.loginType === "email" ? (
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <Mail size={16} />
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                style={{
-                  ...styles.input,
-                  ...(errors.email ? styles.inputError : {}),
-                }}
-                placeholder="Enter your email"
-              />
-              {errors.email && (
-                <div style={styles.errorText}>
-                  <AlertCircle size={14} />
-                  {errors.email}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <Mail size={16} />
-                Mobile Number
-              </label>
-              <input
-                type="tel"
-                value={formData.mobileNumber}
-                onChange={(e) => handleChange("mobileNumber", e.target.value)}
-                style={{
-                  ...styles.input,
-                  ...(errors.mobileNumber ? styles.inputError : {}),
-                }}
-                placeholder="Enter 10-digit mobile number"
-                maxLength={10}
-              />
-              {errors.mobileNumber && (
-                <div style={styles.errorText}>
-                  <AlertCircle size={14} />
-                  {errors.mobileNumber}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Password */}
           <div style={styles.inputGroup}>
@@ -413,6 +400,53 @@ const LoginPage = () => {
             Sign up
           </Link>
         </div>
+
+        {showRequestForm && (
+          <div style={styles.requestModal}>
+            <div style={styles.requestCard}>
+              <h3>Request Account Activation</h3>
+              <p>Your account is pending admin approval. Send a request to activate your account.</p>
+              <textarea
+                value={requestData.message}
+                onChange={(e) => setRequestData({...requestData, message: e.target.value})}
+                placeholder="Please explain why you need access..."
+                style={styles.requestTextarea}
+              />
+              <div style={styles.requestButtons}>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('http://localhost:21000/api/v1/User/createRequest', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email: requestData.email,
+                          requestType: 'Account Activation',
+                          message: requestData.message
+                        })
+                      });
+                      if (response.ok) {
+                        alert('Request sent successfully!');
+                        setShowRequestForm(false);
+                      }
+                    } catch (error) {
+                      alert('Failed to send request');
+                    }
+                  }}
+                  style={styles.sendButton}
+                >
+                  Send Request
+                </button>
+                <button
+                  onClick={() => setShowRequestForm(false)}
+                  style={styles.cancelButton}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,112 +1,79 @@
 import { useState } from 'react';
-import { userAPI } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 
 const UserRequestForm = () => {
-  const [formData, setFormData] = useState({
-    requestType: '',
-    message: '',
-  });
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const sendRequest = async () => {
     setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      const requestData = {
-        userId: user.id,
-        ...formData,
-      };
-
-      const response = await userAPI.createRequest(requestData);
+      const response = await fetch('http://localhost:21000/api/v1/User/createRequest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          requestType: 'General Request',
+          message: 'User has sent a request for assistance'
+        })
+      });
       
-      if (response.data.success) {
-        setSuccess('Request sent to admin successfully!');
-        setFormData({ requestType: '', message: '' });
+      const data = await response.json();
+      if (data.success) {
+        setSent(true);
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to send request');
+      console.error('Failed to send request');
     } finally {
       setLoading(false);
     }
   };
 
+  const styles = {
+    container: {
+      maxWidth: '400px',
+      margin: '50px auto',
+      padding: '2rem',
+      textAlign: 'center',
+      background: 'white',
+      borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+    },
+    button: {
+      padding: '1rem 2rem',
+      backgroundColor: '#667eea',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '1rem',
+      fontWeight: '600',
+      cursor: loading ? 'not-allowed' : 'pointer',
+      opacity: loading ? 0.7 : 1
+    },
+    success: {
+      color: '#10b981',
+      fontSize: '1.1rem',
+      fontWeight: '600'
+    }
+  };
+
   return (
-    <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px' }}>
+    <div style={styles.container}>
       <h2>Send Request to Admin</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>Request Type:</label>
-          <select
-            name="requestType"
-            value={formData.requestType}
-            onChange={handleChange}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          >
-            <option value="">Select request type</option>
-            <option value="Assignment Extension">Assignment Extension</option>
-            <option value="Grade Review">Grade Review</option>
-            <option value="Technical Issue">Technical Issue</option>
-            <option value="Account Issue">Account Issue</option>
-            <option value="Other">Other</option>
-          </select>
+      {sent ? (
+        <div style={styles.success}>
+          ✅ Request sent successfully!
         </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label>Message:</label>
-          <textarea
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            required
-            rows="5"
-            placeholder="Describe your request in detail..."
-            style={{ width: '100%', padding: '8px', marginTop: '5px', resize: 'vertical' }}
-          />
-        </div>
-
-        {error && (
-          <div style={{ color: 'red', marginBottom: '15px' }}>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{ color: 'green', marginBottom: '15px' }}>
-            {success}
-          </div>
-        )}
-
+      ) : (
         <button
-          type="submit"
+          onClick={sendRequest}
           disabled={loading}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
+          style={styles.button}
         >
           {loading ? 'Sending...' : 'Send Request'}
         </button>
-      </form>
+      )}
     </div>
   );
 };

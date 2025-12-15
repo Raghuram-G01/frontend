@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import CreateAssignmentPage from './assignment-create-page/assignment-create-page-component';
 import UserRequestsPage from './admin-request-page/admin-request-page';
@@ -7,12 +9,15 @@ import UserAssignmentDashboard from './user-assignment-page/user-assignment-page
 import UserRequestForm from './UserRequestForm';
 import UserSubmissions from './UserSubmissions';
 import AdminGrading from './AdminGrading';
+import WelcomeDashboard from './WelcomeDashboard';
+import AssignmentSubmission from './AssignmentSubmission';
+import AdminGradingPanel from './AdminGradingPanel';
 
 const Dashboard = () => {
-  const admin = JSON.parse(localStorage.getItem('admin') || '{}');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user, isAuthenticated, isAdmin } = useAuth();
+  const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState(admin.id ? 'create-assignment' : 'assignments');
+  const [activeTab, setActiveTab] = useState('welcome');
   const [isLoading, setIsLoading] = useState(false);
 
   const styles = {
@@ -72,7 +77,8 @@ const Dashboard = () => {
   };
 
   const tabNames = {
-    'assignments': admin.id ? 'Assignment Dashboard' : 'My Assignments',
+    'welcome': 'Dashboard Overview',
+    'assignments': isAdmin ? 'Assignment Dashboard' : 'My Assignments',
     'send-request': 'Send Request to Admin',
     'my-submissions': 'My Submissions & Grades',
     'create-assignment': 'Create New Assignment',
@@ -82,17 +88,28 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [activeTab]);
+  }, [activeTab, isAuthenticated, navigate]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'welcome':
+        return <WelcomeDashboard />;
       case 'assignments':
-        return <UserAssignmentDashboard />;
+        return <AssignmentSubmission />;
       case 'send-request':
         return <UserRequestForm />;
       case 'my-submissions':
@@ -104,9 +121,9 @@ const Dashboard = () => {
       case 'assignment-results':
         return <AssignmentResults />;
       case 'grade-submissions':
-        return <AdminGrading />;
+        return <AdminGradingPanel />;
       default:
-        return admin.id ? <CreateAssignmentPage /> : <UserAssignmentDashboard />;
+        return <WelcomeDashboard />;
     }
   };
 

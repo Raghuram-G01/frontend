@@ -18,11 +18,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const API_ENDPOINTS = {
+  USER: {
+    SIGNUP: '/User/userSignup',
+    LOGIN: '/User/userLogin',
+    ADMIN_SIGNUP: '/User/adminSignup',
+    ADMIN_LOGIN: '/User/adminLogin',
+  },
+  ADMIN: {
+    GET_REQUESTS: '/Admin/getAllRequests',
+    ACCEPT_DECLINE: '/Admin/acceptOrDecline',
+    CREATE_ASSIGNMENT: '/Admin/createAssignment',
+  }
+};
+
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  login: (credentials) => api.post('/auth/login', credentials),
-  adminRegister: (adminData) => api.post('/auth/admin/register', adminData),
-  adminLogin: (credentials) => api.post('/auth/admin/login', credentials),
+  register: (userData) => api.post(API_ENDPOINTS.USER.SIGNUP, userData),
+  login: (credentials) => api.post(API_ENDPOINTS.USER.LOGIN, credentials),
+  adminRegister: (adminData) => api.post(API_ENDPOINTS.USER.ADMIN_SIGNUP, adminData),
+  adminLogin: (credentials) => api.post(API_ENDPOINTS.USER.ADMIN_LOGIN, credentials),
 };
 
 export const userAPI = {

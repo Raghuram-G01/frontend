@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_ENDPOINTS } from "../../config/api";
 import { UserPlus, Mail, Phone, Building, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
-    secondName: "",
     email: "",
-    mobileNumber: "",
     collegeName: "",
     password: "",
     confirmPassword: "",
@@ -26,18 +22,10 @@ const RegisterPage = () => {
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
     }
-    if (!formData.secondName.trim()) {
-      newErrors.secondName = "Second name is required";
-    }
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
-    }
-    if (!formData.mobileNumber.trim()) {
-      newErrors.mobileNumber = "Mobile number is required";
-    } else if (!/^\d{10}$/.test(formData.mobileNumber)) {
-      newErrors.mobileNumber = "Mobile number must be 10 digits";
     }
     if (!formData.collegeName.trim()) {
       newErrors.collegeName = "College name is required";
@@ -70,23 +58,21 @@ const RegisterPage = () => {
     setSuccess(false);
 
     try {
-      const endpoint =
-        formData.userType === "admin"
-          ? API_ENDPOINTS.USER.ADMIN_SIGNUP
-          : API_ENDPOINTS.USER.SIGNUP;
+      const endpoint = formData.userType === "admin" ? "/User/adminSignup" : "/User/userSignup";
 
       const payload = {
         firstName: formData.firstName,
-        secondName: formData.secondName,
         email: formData.email,
-        mobileNumber: formData.mobileNumber,
         collegeName: formData.collegeName,
         password: formData.password,
       };
 
-      const { data } = await axios.post(endpoint, payload, {
+      const response = await fetch(`http://localhost:21000/api/v1${endpoint}`, {
+        method: 'POST',
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
+      const data = await response.json();
 
       if (data.success) {
         setSuccess(true);
@@ -98,10 +84,7 @@ const RegisterPage = () => {
       }
     } catch (error) {
       setErrors({
-        submit:
-          error.response?.data?.message ||
-          error.message ||
-          "Registration failed. Please try again.",
+        submit: error.message || "Registration failed. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -332,29 +315,7 @@ const RegisterPage = () => {
             )}
           </div>
 
-          {/* Second Name */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              <User size={16} />
-              Last Name
-            </label>
-            <input
-              type="text"
-              value={formData.secondName}
-              onChange={(e) => handleChange("secondName", e.target.value)}
-              style={{
-                ...styles.input,
-                ...(errors.secondName ? styles.inputError : {}),
-              }}
-              placeholder="Enter your last name"
-            />
-            {errors.secondName && (
-              <div style={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.secondName}
-              </div>
-            )}
-          </div>
+
 
           {/* Email */}
           <div style={styles.inputGroup}>
@@ -380,30 +341,7 @@ const RegisterPage = () => {
             )}
           </div>
 
-          {/* Mobile Number */}
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              <Phone size={16} />
-              Mobile Number
-            </label>
-            <input
-              type="tel"
-              value={formData.mobileNumber}
-              onChange={(e) => handleChange("mobileNumber", e.target.value)}
-              style={{
-                ...styles.input,
-                ...(errors.mobileNumber ? styles.inputError : {}),
-              }}
-              placeholder="Enter 10-digit mobile number"
-              maxLength={10}
-            />
-            {errors.mobileNumber && (
-              <div style={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.mobileNumber}
-              </div>
-            )}
-          </div>
+
 
           {/* College Name */}
           <div style={styles.inputGroup}>

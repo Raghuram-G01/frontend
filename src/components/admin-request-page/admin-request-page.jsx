@@ -21,7 +21,7 @@ const UserRequestsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCollege, setFilterCollege] = useState("all");
 
-  const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+  const admin = JSON.parse(localStorage.getItem('user') || '{}');
   const adminId = admin.id;
 
   useEffect(() => {
@@ -36,10 +36,16 @@ const UserRequestsPage = () => {
     
     setLoading(true);
     try {
-      const response = await adminAPI.getPendingRequests(adminId);
+      const response = await fetch(`http://localhost:21000/api/v1/Admin/getAllRequests/${adminId}`);
+      const data = await response.json();
 
-      if (response.data.success) {
-        setRequests(response.data.data || []);
+      if (data.success) {
+        // Combine registration requests and user requests
+        const allRequests = [
+          ...(data.data.registrationRequests || []),
+          ...(data.data.userRequests || [])
+        ];
+        setRequests(allRequests);
       } else {
         console.error("Failed to fetch requests");
       }
@@ -57,13 +63,19 @@ const UserRequestsPage = () => {
     setActionLoading((prev) => ({ ...prev, [userId]: action }));
 
     try {
-      const response = await adminAPI.acceptUser({
-        adminId,
-        userId,
-        select: action === "accept" ? 1 : 0,
+      const response = await fetch('http://localhost:21000/api/v1/Admin/acceptOrDecline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminId,
+          userId,
+          select: action === "accept" ? 1 : 0,
+        })
       });
+      
+      const data = await response.json();
 
-      if (response.data.success) {
+      if (data.success) {
         showNotification(
           action === "accept" ? "User Accepted!" : "Request Declined!",
           action === "accept" ? "success" : "error"
@@ -71,7 +83,7 @@ const UserRequestsPage = () => {
 
         setRequests((prev) => prev.filter((u) => u._id !== userId));
       } else {
-        showNotification(response.data.message || "Action failed. Please try again.", "error");
+        showNotification(data.message || "Action failed. Please try again.", "error");
       }
     } catch (error) {
       console.error("Action error:", error.response?.data || error.message);
