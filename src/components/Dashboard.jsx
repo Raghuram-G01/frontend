@@ -11,7 +11,7 @@ import UserSubmissions from './UserSubmissions';
 import AdminGrading from './AdminGrading';
 import WelcomeDashboard from './WelcomeDashboard';
 import AssignmentSubmission from './AssignmentSubmission';
-import AdminGradingPanel from './AdminGradingPanel';
+import AdminSubmissionReview from './AdminSubmissionReview';
 
 const Dashboard = () => {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -121,7 +121,7 @@ const Dashboard = () => {
       case 'assignment-results':
         return <AssignmentResults />;
       case 'grade-submissions':
-        return <AdminGradingPanel />;
+        return <AdminSubmissionReview />;
       default:
         return <WelcomeDashboard />;
     }
