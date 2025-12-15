@@ -15,8 +15,10 @@ const AssignmentSubmission = () => {
 
   const fetchAssignments = async () => {
     try {
-      const response = await fetch(`http://localhost:21000/api/v1/User/allAssignments?userId=${user.id}`, {
-        method: 'POST'
+      const response = await fetch('http://localhost:21000/api/v1/User/allAssignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
       });
       const data = await response.json();
       if (data.success) {
@@ -46,29 +48,23 @@ const AssignmentSubmission = () => {
 
     setSubmitting(true);
     try {
-      // Convert file to base64 for simple storage
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const response = await fetch('http://localhost:21000/api/v1/User/submitTest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            assignmentId,
-            pdfFile: reader.result
-          })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          alert('Assignment submitted successfully!');
-          setSelectedFile(null);
-          fetchAssignments();
-        } else {
-          alert(data.message || 'Submission failed');
-        }
-      };
-      reader.readAsDataURL(selectedFile);
+      const response = await fetch('http://localhost:21000/api/v1/User/submitTest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          assignmentId
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Assignment submitted successfully!');
+        setSelectedFile(null);
+        fetchAssignments();
+      } else {
+        alert(data.message || 'Submission failed');
+      }
     } catch (error) {
       alert('Submission failed');
     } finally {
