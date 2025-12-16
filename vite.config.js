@@ -1,7 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-})
+  server: {
+    host: true, // or "0.0.0.0"
+    port: 5173,
+    hmr: {
+      protocol: "ws",
+      host: "51.20.66.94",
+      port: 5173,
+    },
+  },
+});
