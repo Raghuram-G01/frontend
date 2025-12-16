@@ -34,7 +34,7 @@ const UserRequestsPage = () => {
       return;
     }
     
-    setLoading(true);
+    setLoading(true);//
     try {
       const response = await fetch(`http://localhost:21000/api/v1/Admin/getAllRequests/${adminId}`);
       const data = await response.json();
