@@ -2,11 +2,115 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Upload, FileText, Calendar, Clock } from 'lucide-react';
 
+const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
+  const { user } = useAuth();
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      setSelectedFile(file);
+    } else {
+      alert('Please select a PDF file');
+    }
+  };
+
+  const submitAssignment = async () => {
+    if (!selectedFile) {
+      alert('Please select a PDF file to submit');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('http://localhost:21000/api/v1/User/submitTest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          assignmentId
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Assignment submitted successfully!');
+        setSelectedFile(null);
+        onSubmit();
+      } else {
+        alert(data.message || 'Submission failed');
+      }
+    } catch (error) {
+      alert('Submission failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const styles = {
+    fileUpload: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+      marginTop: '1rem',
+    },
+    fileInput: {
+      display: 'none',
+    },
+    fileButton: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.75rem 1rem',
+      background: '#f7fafc',
+      border: '2px dashed #cbd5e0',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.3s',
+    },
+    submitButton: {
+      padding: '0.75rem 1.5rem',
+      background: '#667eea',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: '600',
+    },
+  };
+
+  return (
+    <div style={styles.fileUpload}>
+      <label style={styles.fileButton}>
+        <Upload size={20} />
+        {selectedFile ? selectedFile.name : 'Choose PDF file'}
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          style={styles.fileInput}
+        />
+      </label>
+      
+      <button
+        onClick={submitAssignment}
+        disabled={!selectedFile || submitting}
+        style={{
+          ...styles.submitButton,
+          opacity: (!selectedFile || submitting) ? 0.5 : 1,
+          cursor: (!selectedFile || submitting) ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {submitting ? 'Submitting...' : 'Submit Assignment'}
+      </button>
+    </div>
+  );
+};
+
 const AssignmentSubmission = () => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,47 +132,6 @@ const AssignmentSubmission = () => {
       console.error('Error fetching assignments:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setSelectedFile(file);
-    } else {
-      alert('Please select a PDF file');
-    }
-  };
-
-  const submitAssignment = async (assignmentId) => {
-    if (!selectedFile) {
-      alert('Please select a PDF file to submit');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await fetch('http://localhost:21000/api/v1/User/submitTest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          assignmentId
-        })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        alert('Assignment submitted successfully!');
-        setSelectedFile(null);
-        fetchAssignments();
-      } else {
-        alert(data.message || 'Submission failed');
-      }
-    } catch (error) {
-      alert('Submission failed');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -110,35 +173,6 @@ const AssignmentSubmission = () => {
       gap: '0.5rem',
       color: '#e53e3e',
       fontSize: '0.875rem',
-    },
-    fileUpload: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem',
-      marginTop: '1rem',
-    },
-    fileInput: {
-      display: 'none',
-    },
-    fileButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.75rem 1rem',
-      background: '#f7fafc',
-      border: '2px dashed #cbd5e0',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      transition: 'all 0.3s',
-    },
-    submitButton: {
-      padding: '0.75rem 1.5rem',
-      background: '#667eea',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontWeight: '600',
     },
     submittedBadge: {
       padding: '0.25rem 0.75rem',
@@ -184,30 +218,10 @@ const AssignmentSubmission = () => {
                 ✓ Submitted
               </div>
             ) : (
-              <div style={styles.fileUpload}>
-                <label style={styles.fileButton}>
-                  <Upload size={20} />
-                  {selectedFile ? selectedFile.name : 'Choose PDF file'}
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    style={styles.fileInput}
-                  />
-                </label>
-                
-                <button
-                  onClick={() => submitAssignment(assignment._id)}
-                  disabled={!selectedFile || submitting}
-                  style={{
-                    ...styles.submitButton,
-                    opacity: (!selectedFile || submitting) ? 0.5 : 1,
-                    cursor: (!selectedFile || submitting) ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {submitting ? 'Submitting...' : 'Submit Assignment'}
-                </button>
-              </div>
+              <AssignmentSubmissionForm 
+                assignmentId={assignment._id}
+                onSubmit={() => fetchAssignments()}
+              />
             )}
           </div>
         ))
