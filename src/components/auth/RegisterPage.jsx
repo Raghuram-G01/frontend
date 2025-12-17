@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Mail, Phone, Building, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "react-toastify";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ const RegisterPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(true);
+        toast.success("Registration successful! Redirecting to login...");
         setTimeout(() => {
           navigate("/login");
         }, 2000);

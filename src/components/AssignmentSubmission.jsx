@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Upload, FileText, Calendar, Clock } from 'lucide-react';
+import { Upload, FileText, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
   const { user } = useAuth();
@@ -12,21 +13,25 @@ const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
     if (file && file.type === 'application/pdf') {
       setSelectedFile(file);
     } else {
-      alert('Please select a PDF file');
+      toast.warning('Please select a PDF file');
     }
   };
 
   const submitAssignment = async () => {
     if (!selectedFile) {
-      alert('Please select a PDF file to submit');
+      toast.warning('Please select a PDF file to submit');
       return;
     }
 
     setSubmitting(true);
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:21000/api/v1/User/submitTest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           userId: user.id,
           assignmentId
@@ -35,14 +40,14 @@ const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
       
       const data = await response.json();
       if (data.success) {
-        alert('Assignment submitted successfully!');
+        toast.success('Assignment submitted successfully! Check "My Grades" to see your submission.');
         setSelectedFile(null);
         onSubmit();
       } else {
-        alert(data.message || 'Submission failed');
+        toast.error(data.message || 'Submission failed');
       }
     } catch (error) {
-      alert('Submission failed');
+      toast.error('Submission failed');
     } finally {
       setSubmitting(false);
     }
@@ -108,20 +113,58 @@ const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
   );
 };
 
+const CountdownTimer = ({ deadline }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const end = new Date(deadline).getTime();
+      const distance = end - now;
+
+      if (distance < 0) {
+        setTimeLeft('Expired');
+        clearInterval(timer);
+      } else {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [deadline]);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: timeLeft === 'Expired' ? '#e53e3e' : '#667eea', fontWeight: '600' }}>
+      <Clock size={16} />
+      {timeLeft}
+    </div>
+  );
+};
+
 const AssignmentSubmission = () => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState({});
 
   useEffect(() => {
     fetchAssignments();
+    fetchSubmissions();
   }, []);
 
   const fetchAssignments = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:21000/api/v1/User/allAssignments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ userId: user.id })
       });
       const data = await response.json();
@@ -132,6 +175,30 @@ const AssignmentSubmission = () => {
       console.error('Error fetching assignments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubmissions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:21000/api/v1/User/submissions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: user.id })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const submissionMap = {};
+        data.submissions.forEach(sub => {
+          submissionMap[sub.assignment] = sub;
+        });
+        setSubmissions(submissionMap);
+      }
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
     }
   };
 
@@ -159,8 +226,9 @@ const AssignmentSubmission = () => {
     assignmentHeader: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       marginBottom: '1rem',
+      gap: '1rem',
     },
     assignmentTitle: {
       fontSize: '1.25rem',
@@ -203,28 +271,48 @@ const AssignmentSubmission = () => {
           <p>No assignments available</p>
         </div>
       ) : (
-        assignments.map((assignment) => (
-          <div key={assignment._id} style={styles.assignmentCard}>
-            <div style={styles.assignmentHeader}>
-              <h3 style={styles.assignmentTitle}>{assignment.assignmentName}</h3>
-              <div style={styles.deadline}>
-                <Calendar size={16} />
-                Due: {new Date(assignment.deadline).toLocaleDateString()}
+        assignments.map((assignment) => {
+          const isSubmitted = !!submissions[assignment._id];
+          return (
+            <div key={assignment._id} style={styles.assignmentCard}>
+              <div style={styles.assignmentHeader}>
+                <div>
+                  <h3 style={styles.assignmentTitle}>{assignment.assignmentName}</h3>
+                  <div style={styles.deadline}>
+                    <Calendar size={16} />
+                    Due: {new Date(assignment.deadline).toLocaleDateString()}
+                  </div>
+                </div>
+                {!isSubmitted && <CountdownTimer deadline={assignment.deadline} />}
               </div>
+              
+              {isSubmitted ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  background: '#d1fae5',
+                  color: '#065f46',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  marginTop: '1rem'
+                }}>
+                  <CheckCircle size={20} />
+                  Submitted
+                </div>
+              ) : (
+                <AssignmentSubmissionForm 
+                  assignmentId={assignment._id}
+                  onSubmit={() => {
+                    fetchAssignments();
+                    fetchSubmissions();
+                  }}
+                />
+              )}
             </div>
-            
-            {assignment.submitted ? (
-              <div style={styles.submittedBadge}>
-                ✓ Submitted
-              </div>
-            ) : (
-              <AssignmentSubmissionForm 
-                assignmentId={assignment._id}
-                onSubmit={() => fetchAssignments()}
-              />
-            )}
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );

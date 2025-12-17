@@ -1,22 +1,48 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { BookOpen, Users, Award, Clock } from 'lucide-react';
 
 const WelcomeDashboard = () => {
   const { user, isAdmin } = useAuth();
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const userStats = [
-    { icon: <BookOpen size={24} />, label: 'Active Assignments', value: '3', color: '#3b82f6' },
-    { icon: <Clock size={24} />, label: 'Pending Submissions', value: '1', color: '#f59e0b' },
-    { icon: <Award size={24} />, label: 'Completed', value: '12', color: '#10b981' },
-  ];
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAdminStats();
+    } else {
+      fetchUserStats();
+    }
+  }, [isAdmin]);
 
-  const adminStats = [
-    { icon: <Users size={24} />, label: 'Total Students', value: '45', color: '#3b82f6' },
-    { icon: <BookOpen size={24} />, label: 'Active Assignments', value: '8', color: '#f59e0b' },
-    { icon: <Award size={24} />, label: 'Pending Requests', value: '3', color: '#ef4444' },
-  ];
+  const fetchAdminStats = async () => {
+    try {
+      const response = await fetch(`http://localhost:21000/api/v1/Admin/stats/${user.id}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setStats([
+          { icon: <Users size={24} />, label: 'Total Students', value: data.data.totalStudents, color: '#3b82f6' },
+          { icon: <BookOpen size={24} />, label: 'Total Assignments', value: data.data.totalAssignments, color: '#f59e0b' },
+          { icon: <Clock size={24} />, label: 'Pending Approvals', value: data.data.pendingApprovals, color: '#ef4444' },
+          { icon: <Award size={24} />, label: 'Total Submissions', value: data.data.totalSubmissions, color: '#10b981' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const stats = isAdmin ? adminStats : userStats;
+  const fetchUserStats = async () => {
+    setStats([
+      { icon: <BookOpen size={24} />, label: 'Active Assignments', value: '0', color: '#3b82f6' },
+      { icon: <Clock size={24} />, label: 'Pending Submissions', value: '0', color: '#f59e0b' },
+      { icon: <Award size={24} />, label: 'Completed', value: '0', color: '#10b981' },
+    ]);
+    setLoading(false);
+  };
 
   const styles = {
     container: {
@@ -124,19 +150,9 @@ const WelcomeDashboard = () => {
     },
   };
 
-  const userActions = [
-    { icon: '📚', title: 'View Assignments', description: 'Check your current assignments' },
-    { icon: '📝', title: 'Submit Work', description: 'Submit completed assignments' },
-    { icon: '📊', title: 'Check Grades', description: 'View your performance' },
-  ];
-
-  const adminActions = [
-    { icon: '➕', title: 'Create Assignment', description: 'Add new assignments' },
-    { icon: '👥', title: 'Manage Users', description: 'Handle user requests' },
-    { icon: '✅', title: 'Grade Work', description: 'Review submissions' },
-  ];
-
-  const actions = isAdmin ? adminActions : userActions;
+  if (loading) {
+    return <div style={styles.container}>Loading...</div>;
+  }
 
   return (
     <div style={styles.container}>
@@ -169,31 +185,7 @@ const WelcomeDashboard = () => {
         ))}
       </div>
 
-      <div style={styles.quickActions}>
-        <h2 style={styles.sectionTitle}>Quick Actions</h2>
-        <div style={styles.actionGrid}>
-          {actions.map((action, index) => (
-            <div 
-              key={index} 
-              style={styles.actionButton}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = '#667eea';
-                e.target.style.background = '#f0f4ff';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.background = '#f8fafc';
-              }}
-            >
-              <div style={{ fontSize: '2rem' }}>{action.icon}</div>
-              <div style={styles.actionTitle}>{action.title}</div>
-              <div style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.25rem' }}>
-                {action.description}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+
     </div>
   );
 };

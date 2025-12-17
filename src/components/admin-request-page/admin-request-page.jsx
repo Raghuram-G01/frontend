@@ -36,16 +36,11 @@ const UserRequestsPage = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:21000/api/v1/Admin/getAllRequests/${adminId}`);
+      const response = await fetch(`http://localhost:21000/api/v1/Admin/pendingUsers/${adminId}`);
       const data = await response.json();
 
       if (data.success) {
-        // Combine registration requests and user requests
-        const allRequests = [
-          ...(data.data.registrationRequests || []),
-          ...(data.data.userRequests || [])
-        ];
-        setRequests(allRequests);
+        setRequests(data.data || []);
       } else {
         console.error("Failed to fetch requests");
       }
@@ -63,13 +58,13 @@ const UserRequestsPage = () => {
     setActionLoading((prev) => ({ ...prev, [userId]: action }));
 
     try {
-      const response = await fetch('http://localhost:21000/api/v1/Admin/acceptOrDecline', {
+      const response = await fetch('http://localhost:21000/api/v1/Admin/approveUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           adminId,
           userId,
-          select: action === "accept" ? 1 : 0,
+          action: action === 'decline' ? 'reject' : 'accept',
         })
       });
       

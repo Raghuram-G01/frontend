@@ -12,6 +12,7 @@ import AdminGrading from './AdminGrading';
 import WelcomeDashboard from './WelcomeDashboard';
 import AssignmentSubmission from './AssignmentSubmission';
 import AdminSubmissionReview from './AdminSubmissionReview';
+import ManageUsers from './ManageUsers';
 
 const Dashboard = () => {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -83,6 +84,7 @@ const Dashboard = () => {
     'my-submissions': 'My Submissions & Grades',
     'create-assignment': 'Create New Assignment',
     'user-requests': 'Manage User Requests',
+    'manage-users': 'Manage Users',
     'assignment-results': 'All Assignment Results',
     'grade-submissions': 'Grade Submissions',
   };
@@ -93,12 +95,23 @@ const Dashboard = () => {
       return;
     }
     
+    // Redirect to correct dashboard based on role
+    const currentPath = window.location.pathname;
+    if (isAdmin && currentPath === '/user/dashboard') {
+      navigate('/admin/dashboard', { replace: true });
+      return;
+    }
+    if (!isAdmin && currentPath === '/admin/dashboard') {
+      navigate('/user/dashboard', { replace: true });
+      return;
+    }
+    
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [activeTab, isAuthenticated, navigate]);
+  }, [activeTab, isAuthenticated, isAdmin, navigate]);
 
   if (!isAuthenticated) {
     return null;
@@ -118,6 +131,8 @@ const Dashboard = () => {
         return <CreateAssignmentPage />;
       case 'user-requests':
         return <UserRequestsPage />;
+      case 'manage-users':
+        return <ManageUsers />;
       case 'assignment-results':
         return <AssignmentResults />;
       case 'grade-submissions':

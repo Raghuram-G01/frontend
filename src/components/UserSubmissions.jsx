@@ -1,30 +1,38 @@
 import { useState, useEffect } from 'react';
-import { userAPI } from '../config/api';
+import { useAuth } from '../context/AuthContext';
+import { FileText, Clock, CheckCircle, Award, Calendar } from 'lucide-react';
 
 const UserSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (user.id) {
-      fetchSubmissions();
-    }
-  }, [user.id]);
+    fetchSubmissions();
+  }, []);
 
   const fetchSubmissions = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await userAPI.getUserSubmissions(user.id);
-      if (response.data.success) {
-        setSubmissions(response.data.data || []);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:21000/api/v1/User/submissions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: user.id })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSubmissions(data.submissions || []);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Error fetching submissions');
+      setError('Error fetching submissions');
     } finally {
       setLoading(false);
     }
@@ -111,12 +119,20 @@ const UserSubmissions = () => {
             {submissions.map((submission) => (
               <div key={submission._id} style={styles.submissionItem}>
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1f2937' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FileText size={20} color="#667eea" />
                     {submission.assignment?.assignmentName || 'Assignment'}
                   </h4>
-                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>
-                    Submitted: {new Date(submission.completedTime).toLocaleDateString()}
+                  <p style={{ margin: '0 0 0.25rem 0', color: '#6b7280', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={14} />
+                    Submitted: {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString() : 'N/A'}
                   </p>
+                  {submission.assignment?.deadline && (
+                    <p style={{ margin: '0 0 0.25rem 0', color: '#6b7280', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Calendar size={14} />
+                      Deadline: {new Date(submission.assignment.deadline).toLocaleDateString()}
+                    </p>
+                  )}
                   {submission.feedback && (
                     <p style={{ margin: '0.5rem 0 0 0', color: '#4b5563', fontSize: '0.9rem' }}>
                       <strong>Feedback:</strong> {submission.feedback}
@@ -126,9 +142,15 @@ const UserSubmissions = () => {
                 
                 <div style={styles.marksContainer(submission.marks !== null)}>
                   {submission.marks !== null ? (
-                    `${submission.marks} marks`
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Award size={18} />
+                      {submission.marks} marks
+                    </div>
                   ) : (
-                    'Pending'
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Clock size={18} />
+                      Waiting for grading
+                    </div>
                   )}
                 </div>
               </div>
