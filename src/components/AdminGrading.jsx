@@ -228,7 +228,7 @@ const AdminGrading = () => {
 
                       {submission.filePath && (
                         <a
-                          href={`http://51.20.66.94:8080/${submission.filePath}`}
+                          href={`http://13.60.70.224:8080/${submission.filePath}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{

@@ -10,7 +10,7 @@ const UserRequestForm = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/User/createRequest",
+        "http://13.60.70.224:8080/api/v1/User/createRequest",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -17,7 +17,7 @@ const AdminGradingPanel = () => {
   const fetchAssignments = async () => {
     try {
       const adminDetails = await fetch(
-        `http://51.20.66.94:8080/api/v1/Admin/getAllRequests/${user.id}`
+        `http://13.60.70.224:8080/api/v1/Admin/getAllRequests/${user.id}`
       );
       const data = await adminDetails.json();
       // For now, we'll create mock assignments
@@ -35,7 +35,7 @@ const AdminGradingPanel = () => {
   const fetchSubmissions = async (assignmentId) => {
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/Admin/fetchResult",
+        "http://13.60.70.224:8080/api/v1/Admin/fetchResult",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -54,7 +54,7 @@ const AdminGradingPanel = () => {
   const gradeSubmission = async (submissionId) => {
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/Admin/gradeSubmission",
+        "http://13.60.70.224:8080/api/v1/Admin/gradeSubmission",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

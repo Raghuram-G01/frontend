@@ -37,7 +37,7 @@ const UserRequestsPage = () => {
     setLoading(true); //
     try {
       const response = await fetch(
-        `http://51.20.66.94:8080/api/v1/Admin/getAllRequests/${adminId}`
+        `http://13.60.70.224:8080/api/v1/Admin/getAllRequests/${adminId}`
       );
       const data = await response.json();
 
@@ -66,7 +66,7 @@ const UserRequestsPage = () => {
 
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/Admin/acceptOrDecline",
+        "http://13.60.70.224:8080/api/v1/Admin/acceptOrDecline",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

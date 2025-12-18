@@ -25,7 +25,7 @@ const AssignmentSubmissionForm = ({ assignmentId, onSubmit }) => {
     setSubmitting(true);
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/User/submitTest",
+        "http://13.60.70.224:8080/api/v1/User/submitTest",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -123,7 +123,7 @@ const AssignmentSubmission = () => {
   const fetchAssignments = async () => {
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/User/allAssignments",
+        "http://13.60.70.224:8080/api/v1/User/allAssignments",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

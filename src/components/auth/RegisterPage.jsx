@@ -80,7 +80,7 @@ const RegisterPage = () => {
       };
 
       const response = await fetch(
-        `http://51.20.66.94:8080/api/v1${endpoint}`,
+        `http://13.60.70.224:8080/api/v1${endpoint}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

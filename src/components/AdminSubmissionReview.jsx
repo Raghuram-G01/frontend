@@ -17,7 +17,7 @@ const AdminSubmissionReview = () => {
   const fetchAdminAssignments = async () => {
     try {
       const response = await fetch(
-        `http://51.20.66.94:8080/api/v1/Admin/getAllRequests/${user.id}`
+        `http://13.60.70.224:8080/api/v1/Admin/getAllRequests/${user.id}`
       );
       const data = await response.json();
 
@@ -35,7 +35,7 @@ const AdminSubmissionReview = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/Admin/fetchResult",
+        "http://13.60.70.224:8080/api/v1/Admin/fetchResult",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ const AdminSubmissionReview = () => {
 
     try {
       const response = await fetch(
-        "http://51.20.66.94:8080/api/v1/Admin/gradeSubmission",
+        "http://13.60.70.224:8080/api/v1/Admin/gradeSubmission",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

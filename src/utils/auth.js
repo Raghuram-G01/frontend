@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://51.20.66.94:8080/api/v1";
+const API_BASE_URL = "http://13.60.70.224:8080/api/v1";
 
 export const authService = {
   getToken: () => localStorage.getItem("token"),
