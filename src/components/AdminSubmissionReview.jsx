@@ -20,12 +20,10 @@ const AdminSubmissionReview = () => {
         `http://13.60.70.224:8080/api/v1/Admin/getAllRequests/${user.id}`
       );
       const data = await response.json();
-
-      // Mock assignments for now since we need to get admin's created assignments
-      setAssignments([
-        { _id: "1", assignmentName: "Math Assignment 1" },
-        { _id: "2", assignmentName: "Science Project" },
-      ]);
+      
+      if (data.success) {
+        setAssignments(data.data || []);
+      }
     } catch (error) {
       console.error("Error fetching assignments:", error);
     }
@@ -45,7 +43,8 @@ const AdminSubmissionReview = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSubmissions(data.data?.assignmentCompleted || []);
+        const completedAssignments = data.data?.assignmentCompleted || [];
+        setSubmissions(completedAssignments);
       }
     } catch (error) {
       console.error("Error fetching submissions:", error);
@@ -77,9 +76,13 @@ const AdminSubmissionReview = () => {
 
       const data = await response.json();
       if (data.success) {
-        alert("Submission graded successfully!");
-        fetchSubmissions(selectedAssignment);
-        setGrading((prev) => ({ ...prev, [submissionId]: {} }));
+        alert('Submission graded successfully!');
+        if (selectedAssignment) {
+          fetchSubmissions(selectedAssignment);
+        }
+        setGrading(prev => ({ ...prev, [submissionId]: {} }));
+      } else {
+        alert(data.message || 'Failed to grade submission');
       }
     } catch (error) {
       alert("Failed to grade submission");
@@ -190,8 +193,11 @@ const AdminSubmissionReview = () => {
           <div style={styles.userInfo}>
             <User size={20} />
             <div>
-              <h4>{submission.user?.firstName}</h4>
-              <p style={{ margin: 0, color: "#718096", fontSize: "0.875rem" }}>
+              <h4 style={{ margin: '0 0 0.25rem 0' }}>{submission.user?.firstName || 'Student'}</h4>
+              <p style={{ margin: 0, color: '#718096', fontSize: '0.875rem' }}>
+                {submission.user?.email || 'No email'}
+              </p>
+              <p style={{ margin: '0.25rem 0 0 0', color: '#718096', fontSize: '0.875rem' }}>
                 Submitted: {new Date(submission.submittedAt).toLocaleString()}
               </p>
             </div>

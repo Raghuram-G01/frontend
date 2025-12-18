@@ -42,12 +42,7 @@ const UserRequestsPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Combine registration requests and user requests
-        const allRequests = [
-          ...(data.data.registrationRequests || []),
-          ...(data.data.userRequests || []),
-        ];
-        setRequests(allRequests);
+        setRequests(data.data || []);
       } else {
         console.error("Failed to fetch requests");
       }
